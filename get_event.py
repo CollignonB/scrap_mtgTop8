@@ -5,6 +5,8 @@ import os
 from urllib.request import urlopen
 import re
 
+import datetime
+
 base_url = "https://www.mtgtop8.com/"
 
 page = urlopen(base_url)
@@ -31,17 +33,9 @@ soup = BeautifulSoup(html, "html.parser")
 
 list_of_decks = soup.find_all("td")[0]
 list_of_events = soup.find_all("td")[1]
-# major_event = [] # listes des 3 évenements notés comme majeur
-# recent_event = [] #listes des 20 dernier événements, a modifié pour juste récupérer les évenements pas consulté
 
 pattern_event = 'event?.*?>'
 
-# events = re.findall(pattern_event, str(list_of_events), re.IGNORECASE)
-# for i in range(1,4):
-#     major_event.append(base_url + events[i][:-2])
-
-# for i in range(5,28):
-#     recent_event.append(base_url + events[i][:-2])
 
 events_inforamtion = []
 re_url_event = '"ev.*?"' #regex qui va recupérer l'url de l'envent
@@ -79,15 +73,10 @@ evenement = evenement.sort_values(by=['date'], ascending = False).drop_duplicate
 event_json = evenement.to_json(orient='index')
 parsed = json.loads(event_json)
 
-# print(evenement)
 
 file_path = "C:/Users/Utilisateur/Documents/python/web_scrp_mtg/mtgtop8.json"
-
-# if not os.path.exists(file_path):
-#     print("fichier n'existe pas")
-#     with open(file_path, 'w') as file:
-#         json.dump(parsed, file, indent=2)
-#         file.close()
+date_last_update = str(datetime.datetime.fromtimestamp(os.path.getctime(file_path))) 
+# A FAIRE : faire la convetrsion de format de la date et faire le test pour récupe seulement les nouveaux event en focntion de la date
 
 with open(file_path, 'w') as file:
         json.dump(parsed, file, indent=2)
