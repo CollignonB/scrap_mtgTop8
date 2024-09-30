@@ -13,7 +13,17 @@ page = urlopen(base_url)
 html = page.read().decode("latin-1")
 soup = BeautifulSoup(html, "html.parser")
 
+# sotckera le precedent json si il existe
+json_file_to_df = []
+
 file_path = "C:/Users/Utilisateur/Documents/python/web_scrp_mtg/mtgtop8.json"
+# verification si un json existe sinon on en créer un vide
+if os.path.exists(file_path):
+    json_file_to_df = pd.read_json("mtgtop8.json", orient='index')
+else:
+    open('C:/Users/Utilisateur/Documents/python/web_scrp_mtg/mtgtop8.json', 'w')
+
+
 # récupération de la date de dernière création du json,                        retrait de l'heure, changement de format
 date_last_update = datetime.datetime.fromtimestamp(os.path.getctime(file_path)).date().strftime("%d/%m/%y")
 
@@ -34,10 +44,7 @@ page = urlopen(followed_format["STANDARD"])
 html = page.read().decode("utf-8")
 soup = BeautifulSoup(html, "html.parser")
 
-list_of_decks = soup.find_all("td")[0]
 list_of_events = soup.find_all("td")[1]
-
-pattern_event = 'event?.*?>'
 
 
 events_inforamtion = []
@@ -56,7 +63,7 @@ for row in list_of_events.findAll('tr', {"class"  : "hover_tr"}):
     important = str(row.findAll('td')).split(",")[1::2]
     # print("29/09/24" >= re.search(re_date_event, str(important), re.IGNORECASE).group()[5:-2] )
     # récuperation de la date de l'évenement
-    if re.search(re_date_event, str(important), re.IGNORECASE).group()[5:-2] >= "29/09/24":
+    if re.search(re_date_event, str(important), re.IGNORECASE).group()[5:-2] >= date_last_update:
         event_date.append(re.search(re_date_event, str(important), re.IGNORECASE).group()[5:-2])
 
         event_url.append(f"{base_url}{re.search(re_url_event, str(important), re.IGNORECASE).group()[1:-1]}&switch=text") 
@@ -68,22 +75,22 @@ for row in list_of_events.findAll('tr', {"class"  : "hover_tr"}):
             event_name.append(re.search(re_name_event, str(important), re.IGNORECASE).group()[5:-3])
 
 # création d'un dictionnaire pour créer le Dataframe
+
 dict = {'name' : event_name, 'url' : event_url, 'date' : event_date}
 
-
-evenement = pd.DataFrame(dict)
-evenement = evenement.sort_values(by=['date'], ascending = False).drop_duplicates()
-event_json = evenement.to_json(orient='index')
-parsed = json.loads(event_json)
-
-print(evenement)
-
-
-
-
-# A FAIRE : faire la convetrsion de format de la date et faire le test pour récupe seulement les nouveaux event en focntion de la date
-
-
-# with open(file_path, 'w') as file:
-#         json.dump(parsed, file, indent=2)
-#         file.close()
+if not dict['name']: 
+    print("le dictionnaire est vide")
+else:
+    evenement = pd.DataFrame(dict)
+    if len(json_file_to_df) != 0:
+        json_file_to_df = json_file_to_df.append(evenement)
+        json_file_to_df = json_file_to_df.sort_values(by=['date'], ascending = False).drop_duplicates()
+        event_json = json_file_to_df.to_json(orient='index')
+        parsed = json.loads(event_json)
+    else:
+        evenement = evenement.sort_values(by=['date'], ascending = False).drop_duplicates()
+        event_json = evenement.to_json(orient='index')
+        parsed = json.loads(event_json)
+    with open(file_path, 'w') as file:
+            json.dump(parsed, file, indent=2)
+            file.close()
