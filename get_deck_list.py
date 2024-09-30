@@ -27,3 +27,12 @@ deck_data = pd.DataFrame(columns=["Player", "Deck", "URL"])
 for i in range(0, len(deck_name)):
     deck_data.loc[i] = [player[i], deck_name[i], deck_url[i]]
 
+file_path = f"C:/Users/Utilisateur/Documents/python/web_scrp_mtg/{list_of_event.loc[0]['name']}.json"
+
+event_json = deck_data.to_json(orient='index')
+parsed = json.loads(event_json)
+
+with open(file_path, 'w') as file:
+        json.dump(parsed, file, indent=2)
+        file.close()
+
