@@ -20,6 +20,8 @@ file_path = "C:/Users/Utilisateur/Documents/python/web_scrp_mtg/mtgtop8.json"
 # verification si un json existe sinon on en créer un vide
 if os.path.exists(file_path):
     json_file_to_df = pd.read_json("mtgtop8.json", orient='index')
+    # json_file_to_df = json_file_to_df['date'].strftime('%d/%m/%y')
+    # print(json_file_to_df)
 else:
     open('C:/Users/Utilisateur/Documents/python/web_scrp_mtg/mtgtop8.json', 'w')
 
@@ -61,11 +63,11 @@ for row in list_of_events.findAll('tr', {"class"  : "hover_tr"}):
 
     # récupération des balises utilent dans le code html
     important = str(row.findAll('td')).split(",")[1::2]
-    # print("29/09/24" >= re.search(re_date_event, str(important), re.IGNORECASE).group()[5:-2] )
     # récuperation de la date de l'évenement
-    if re.search(re_date_event, str(important), re.IGNORECASE).group()[5:-2] >= date_last_update:
-        event_date.append(re.search(re_date_event, str(important), re.IGNORECASE).group()[5:-2])
-
+    if re.search(re_date_event, str(important), re.IGNORECASE).group()[5:-2] >= '20/09/24':
+        date = re.search(re_date_event, str(important), re.IGNORECASE).group()[5:-2]
+        event_date.append(datetime.datetime.strptime(date, '%d/%m/%y').date())
+        event_date = sorted(event_date, reverse=True)
         event_url.append(f"{base_url}{re.search(re_url_event, str(important), re.IGNORECASE).group()[1:-1]}&switch=text") 
 
         # recupération du nom de l'evenement
@@ -83,14 +85,21 @@ if not dict['name']:
 else:
     evenement = pd.DataFrame(dict)
     if len(json_file_to_df) != 0:
-        json_file_to_df = json_file_to_df.append(evenement)
-        json_file_to_df = json_file_to_df.sort_values(by=['date'], ascending = False).drop_duplicates()
-        event_json = json_file_to_df.to_json(orient='index')
-        parsed = json.loads(event_json)
+        frames = [pd.DataFrame(json_file_to_df), evenement]
+        new_datas = pd.concat(frames)
+        new_datas = new_datas.drop_duplicates()
+        print(new_datas)
+        # new_datas = pd.to_datetime(new_datas['date'], format='%d/%m/%y')
+        # print(type(new_datas['date'])) .sort_values(by = "date", ascending = False)
+        
+        # event_json = new_datas.to_json(orient='index')
+        # parsed = json.loads(event_json)
+
     else:
         evenement = evenement.sort_values(by=['date'], ascending = False).drop_duplicates()
         event_json = evenement.to_json(orient='index')
         parsed = json.loads(event_json)
-    with open(file_path, 'w') as file:
-            json.dump(parsed, file, indent=2)
-            file.close()
+
+    # with open(file_path, 'w') as file:
+    #         json.dump(parsed, file, indent=2)
+    #         file.close()
