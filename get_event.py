@@ -31,17 +31,17 @@ soup = BeautifulSoup(html, "html.parser")
 
 list_of_decks = soup.find_all("td")[0]
 list_of_events = soup.find_all("td")[1]
-major_event = [] # listes des 3 évenements notés comme majeur
-recent_event = [] #listes des 20 dernier événements, a modifié pour juste récupérer les évenements pas consulté
+# major_event = [] # listes des 3 évenements notés comme majeur
+# recent_event = [] #listes des 20 dernier événements, a modifié pour juste récupérer les évenements pas consulté
 
 pattern_event = 'event?.*?>'
 
-events = re.findall(pattern_event, str(list_of_events), re.IGNORECASE)
-for i in range(1,4):
-    major_event.append(base_url + events[i][:-2])
+# events = re.findall(pattern_event, str(list_of_events), re.IGNORECASE)
+# for i in range(1,4):
+#     major_event.append(base_url + events[i][:-2])
 
-for i in range(5,28):
-    recent_event.append(base_url + events[i][:-2])
+# for i in range(5,28):
+#     recent_event.append(base_url + events[i][:-2])
 
 events_inforamtion = []
 re_url_event = '"ev.*?"' #regex qui va recupérer l'url de l'envent
@@ -59,7 +59,7 @@ for row in list_of_events.findAll('tr', {"class"  : "hover_tr"}):
     important = str(row.findAll('td')).split(",")[1::2]
 
     # recréer et stock les urls des evenements
-    event_url.append(f"{base_url}{re.search(re_url_event, str(important), re.IGNORECASE).group()[1:-1]}") 
+    event_url.append(f"{base_url}{re.search(re_url_event, str(important), re.IGNORECASE).group()[1:-1]}&switch=text") 
 
     # recupération du nom de l'evenement
     if format != "EDH":
@@ -73,13 +73,22 @@ for row in list_of_events.findAll('tr', {"class"  : "hover_tr"}):
 # création d'un dictionnaire pour créer le Dataframe
 dict = {'name' : event_name, 'url' : event_url, 'date' : event_date}
 
+
 evenement = pd.DataFrame(dict)
-json = evenement.to_json(orient='index')
-parsed = json.loads(json)
+evenement = evenement.sort_values(by=['date'], ascending = False).drop_duplicates()
+event_json = evenement.to_json(orient='index')
+parsed = json.loads(event_json)
 
-file_path = "Documents/python/web_scrp_mtg/mtgtop8.json"
+# print(evenement)
 
-if os.path.exists(file_path):
-    with open(file_path, 'w') as file:
+file_path = "C:/Users/Utilisateur/Documents/python/web_scrp_mtg/mtgtop8.json"
+
+# if not os.path.exists(file_path):
+#     print("fichier n'existe pas")
+#     with open(file_path, 'w') as file:
+#         json.dump(parsed, file, indent=2)
+#         file.close()
+
+with open(file_path, 'w') as file:
         json.dump(parsed, file, indent=2)
         file.close()
