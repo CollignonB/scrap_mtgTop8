@@ -24,9 +24,30 @@ card_name, copy = [], []
 list_of_cards = str(soup.find_all("div", attrs={"style" : "margin:3px;flex:1;"}))
 
 for line in list_of_cards.split("<div")[2:]:
-    pass
+
+    data = re.search(';">.*?</', str(line), re.IGNORECASE)
+    important_data = []
+    if type(data) == re.Match:
+        important_data = re.findall('">.*?<',data.group(), re.IGNORECASE)
+    if len(important_data) == 2:
+        copy.append(important_data[0][2:-2])
+        card_name.append(important_data[1][2:-1])
+# print(copy, card_name)
+
+deck_list = pd.DataFrame(columns=["number of copy", "card name", "main/side"])
+main_deck_size = 0
+for i in range(0, len(copy)):
+    if main_deck_size != 60:
+        deck_list.loc[i] = [copy[i], card_name[i], "Main Deck"]
+        main_deck_size += int(copy[i])
+    else:
+        deck_list.loc[i] = [copy[i], card_name[i], "Sideboard"]
+
+
+
+print(deck_list)
 
 """
-regex qui recupère tout les noms de carte et le nombre d'exemplaire
-;">.*?</
+amélioration : 
+récupérer l'url de chaque carte sur scryfall.com via un bot qui recherche le nom de la carte sur le site et recupère l'url
 """
