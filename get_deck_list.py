@@ -7,46 +7,87 @@ import re
 from os import walk
 
 # recupération de la liste des fichiers d'evenement 
-list_of_deck = next(walk(r"C:\Users\Utilisateur\Documents\python\web_scrp_mtg\events"), (None, None, []))[2]
+# list_of_deck = walk(r"C:\Users\Utilisateur\Documents\python\web_scrp_mtg\events")
+list_of_deck = [str(x[0]) for x in os.walk(r"C:\Users\Utilisateur\Documents\python\web_scrp_mtg\events")]
+
+filenames = []
+for i in list_of_deck:
+
+    filenames.append(next(walk(i), (None, None, []))[2])
 
 # ouverutre d'un fichier d'evenement
-deck_lists = pd.read_json(fr"C:\Users\Utilisateur\Documents\python\web_scrp_mtg\events\{list_of_deck[8]}", orient="index")
+
+for event_index in range(1, len(filenames)): 
+    
+    try:
+        deck_lists = pd.read_json(fr"{list_of_deck[event_index]}\{filenames[event_index][-1]}", orient="index")
+        player = deck_lists["Player"]
+        deck = deck_lists["Deck"]
+        url = deck_lists["URL"]
+    except KeyError:
+        print("Le json n'est pas au bon format")
 
 # for index, row in deck_lists.iterrows():
     # print(deck_lists['Deck'][ind], deck_lists['URL'][ind])
 
-page = urlopen(deck_lists.loc[3]['URL'])
-html = page.read().decode("latin-1")
-soup = BeautifulSoup(html, "html.parser")
+    for deck_number in range(0, len(deck_lists)):
+        page = urlopen(deck_lists.loc[deck_number]['URL'])
+        html = page.read().decode("latin-1")
+        soup = BeautifulSoup(html, "html.parser")
 
-card_name, copy = [], []
+        card_name, copy = [], []
 
-list_of_cards = str(soup.find_all("div", attrs={"style" : "margin:3px;flex:1;"}))
+        list_of_cards = str(soup.find_all("div", attrs={"style" : "margin:3px;flex:1;"}))
 
-for line in list_of_cards.split("<div")[2:]:
+        for line in list_of_cards.split("<div")[2:]:
 
-    data = re.search(';">.*?</', str(line), re.IGNORECASE)
-    important_data = []
-    if type(data) == re.Match:
-        important_data = re.findall('">.*?<',data.group(), re.IGNORECASE)
-    if len(important_data) == 2:
-        copy.append(important_data[0][2:-2])
-        card_name.append(important_data[1][2:-1])
-# print(copy, card_name)
+            data = re.search(';">.*?</', str(line), re.IGNORECASE)
+            important_data = []
+            if type(data) == re.Match:
+                important_data = re.findall('">.*?<',data.group(), re.IGNORECASE)
+            if len(important_data) == 2:
+                copy.append(important_data[0][2:-2])
+                card_name.append(important_data[1][2:-1])
+        # print(copy, card_name)
 
-deck_list = pd.DataFrame(columns=["number of copy", "card name", "main/side"])
-main_deck_size = 0
-for i in range(0, len(copy)):
-    if main_deck_size != 60:
-        deck_list.loc[i] = [copy[i], card_name[i], "Main Deck"]
-        main_deck_size += int(copy[i])
-    else:
-        deck_list.loc[i] = [copy[i], card_name[i], "Sideboard"]
+        deck_list = pd.DataFrame(columns=["number of copy", "card name", "main/side"])
+        main_deck_size = 0
+
+        for i in range(0, len(copy)):
+            if main_deck_size != 60:
+                deck_list.loc[i] = [copy[i], card_name[i], "Main Deck"]
+                main_deck_size += int(copy[i])
+            else:
+                deck_list.loc[i] = [copy[i], card_name[i], "Sideboard"]
+
+        deck_standings = ""
+        if deck_number == 0:
+            deck_standings = "1"
+        elif deck_number == 1:
+            deck_standings = "2"
+        elif deck_number == 3 or deck_number == 2:
+            deck_standings = "3-4"
+        elif deck_number >= 4 and deck_number <= 7:
+            deck_standings = "5-8"
+        elif deck_number >= 8 and deck_number <= 15:
+            deck_standings = "9-16"
+        elif deck_number >= 16 and deck_number <= 31:
+            deck_standings = "17-32"
+        else :
+            deck_standings = "33-64"
+        file_path = f"{list_of_deck[event_index]}\#{deck_standings}_{deck_lists['Deck'][deck_number].replace(':','').replace(' ', '_').replace('/', '_')}.json"
+
+        if os.path.isfile(file_path) :
+            file_path = f"{list_of_deck[event_index]}\#{deck_standings}_{deck_lists['Deck'][deck_number].replace(':','').replace(' ', '_').replace('/', '_')}({deck_number}).json"
 
 
+        event_json = deck_list.to_json(orient='index')
+        parsed = json.loads(event_json)
 
-print(deck_list)
-
+        with open(file_path, 'w') as file:
+            json.dump(parsed, file, indent=2)
+            print(f"#{deck_standings}_{deck_lists['Deck'][deck_number].replace(':','').replace(' ', '_').replace('/', '_')}.json created")
+            file.close()
 """
 amélioration : 
 récupérer l'url de chaque carte sur scryfall.com via un bot qui recherche le nom de la carte sur le site et recupère l'url
