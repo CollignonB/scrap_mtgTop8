@@ -33,14 +33,18 @@ for index in range(len(list_of_event)):
     
     event_name = f"{list_of_event.loc[index]['name'].replace(':','').replace(' ', '_')}_{list_of_event.loc[index]['date'].date()}"
     # creation d'un fichier correspondant a un evenement
-    Path(f"C:/Users/Utilisateur/Documents/python/web_scrp_mtg/events/{event_name}").mkdir(parents=True, exist_ok=True)
-    file_path = f"C:/Users/Utilisateur/Documents/python/web_scrp_mtg/events/{event_name}/{event_name}.json"
 
-    event_json = deck_data.to_json(orient='index')
-    parsed = json.loads(event_json)
+    if not os.path.isdir(f"C:/Users/Utilisateur/Documents/python/web_scrp_mtg/events/{event_name}") :
+        Path(f"C:/Users/Utilisateur/Documents/python/web_scrp_mtg/events/{event_name}").mkdir(parents=True, exist_ok=True)
+        file_path = f"C:/Users/Utilisateur/Documents/python/web_scrp_mtg/events/{event_name}/{event_name}.json"
 
-    with open(file_path, 'w') as file:
-            json.dump(parsed, file, indent=2)
-            print('folder created')
-            file.close()
+        event_json = deck_data.to_json(orient='index')
+        parsed = json.loads(event_json)
+
+        with open(file_path, 'w') as file:
+                json.dump(parsed, file, indent=2)
+                print(f'events/{event_name}/{event_name}.json créé')
+                file.close()
+    else :
+         print("le dossier existe deja")
 
