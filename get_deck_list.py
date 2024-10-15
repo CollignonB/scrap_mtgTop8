@@ -7,18 +7,20 @@ import re
 from os import walk
 
 # recupération de la liste des fichiers d'evenement 
-# list_of_deck = walk(r"C:\Users\Utilisateur\Documents\python\web_scrp_mtg\events")
 list_of_deck = [str(x[0]) for x in os.walk(r"C:\Users\Utilisateur\Documents\python\web_scrp_mtg\events")]
 
 filenames = []
-for i in list_of_deck:
+for deck in list_of_deck:
 
-    filenames.append(next(walk(i), (None, None, []))[2])
+    filenames.append(next(walk(deck), (None, None, []))[2])
+
 
 # ouverutre d'un fichier d'evenement
 
 for event_index in range(1, len(filenames)): 
-    
+    if len(filenames[event_index]) != 1:
+        print(filenames[event_index][-1][:-5], " deja traité")
+        continue
     try:
         deck_lists = pd.read_json(fr"{list_of_deck[event_index]}\{filenames[event_index][-1]}", orient="index")
         player = deck_lists["Player"]
@@ -75,6 +77,7 @@ for event_index in range(1, len(filenames)):
             deck_standings = "17-32"
         else :
             deck_standings = "33-64"
+
         file_path = f"{list_of_deck[event_index]}\#{deck_standings}_{deck_lists['Deck'][deck_number].replace(':','').replace(' ', '_').replace('/', '_')}.json"
 
         if os.path.isfile(file_path) :
@@ -88,6 +91,12 @@ for event_index in range(1, len(filenames)):
             json.dump(parsed, file, indent=2)
             print(f"#{deck_standings}_{deck_lists['Deck'][deck_number].replace(':','').replace(' ', '_').replace('/', '_')}.json created")
             file.close()
+            
+    print("Passer a l'event suivant ? y/n")
+    p = input()
+    if p.lower() == 'n':
+        print("Arret du traitement")
+        break
 """
 amélioration : 
 récupérer l'url de chaque carte sur scryfall.com via un bot qui recherche le nom de la carte sur le site et recupère l'url
