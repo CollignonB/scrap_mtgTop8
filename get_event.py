@@ -53,8 +53,10 @@ for row in list_of_events.findAll('tr', {"class"  : "hover_tr"}):
     # récupération des balises utilent dans le code html
     important = str(row.findAll('td')).split(",")[1::2]
     # récuperation de la date de l'évenement
-    if re.search(re_date_event, str(important), re.IGNORECASE).group()[5:-2] >= '20/09/24':
-        event_date.append(re.search(re_date_event, str(important), re.IGNORECASE).group()[5:-2])
+    if re.search(re_date_event, str(important), re.IGNORECASE).group()[5:-2] >= date_last_update:
+        date = (re.search(re_date_event, str(important), re.IGNORECASE).group()[5:-2])
+        foramted_date = datetime.datetime.strptime(date,"%d/%m/%y").date()
+        event_date.append(str(foramted_date))
 
         event_url.append(f"{base_url}{re.search(re_url_event, str(important), re.IGNORECASE).group()[1:-1]}&switch=text") 
 
@@ -78,3 +80,10 @@ else:
     with open(file_path, 'w') as file:
             json.dump(parsed, file, indent=2)
             file.close()
+    
+    print('json file created')
+
+
+    """
+        Pour plustard : Esaayé de faire un json qui ne se réécrit pas
+    """
