@@ -1,9 +1,10 @@
-from bs4 import BeautifulSoup
 import pandas as pd
 import json
 import os
-from urllib.request import urlopen
 import re
+from bs4 import BeautifulSoup
+from urllib.request import urlopen
+from pathlib import Path
 
 list_of_event = pd.read_json("mtgtop8.json", orient="index")
 
@@ -29,8 +30,11 @@ for index in range(len(list_of_event)):
     deck_data = pd.DataFrame(columns=["Player", "Deck", "URL"])
     for i in range(0, len(deck_name)):
         deck_data.loc[i] = [player[i], deck_name[i], deck_url[i]]
-
-    file_path = f"C:/Users/Utilisateur/Documents/python/web_scrp_mtg/events/{list_of_event.loc[index]['name'].replace(':','').replace(' ', '_')}_{list_of_event.loc[index]['date'].date()}.json"
+    
+    event_name = f"{list_of_event.loc[index]['name'].replace(':','').replace(' ', '_')}_{list_of_event.loc[index]['date'].date()}"
+    # creation d'un fichier correspondant a un evenement
+    Path(f"C:/Users/Utilisateur/Documents/python/web_scrp_mtg/events/{event_name}").mkdir(parents=True, exist_ok=True)
+    file_path = f"C:/Users/Utilisateur/Documents/python/web_scrp_mtg/events/{event_name}/{event_name}.json"
 
     event_json = deck_data.to_json(orient='index')
     parsed = json.loads(event_json)
