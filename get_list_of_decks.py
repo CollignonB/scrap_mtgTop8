@@ -41,6 +41,6 @@ for index in range(len(list_of_event)):
 
     with open(file_path, 'w') as file:
             json.dump(parsed, file, indent=2)
-            print('json file created')
+            print('folder created')
             file.close()
 
