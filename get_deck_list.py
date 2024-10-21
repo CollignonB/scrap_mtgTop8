@@ -1,10 +1,12 @@
 from bs4 import BeautifulSoup
+from os import walk
 import pandas as pd
 import json
 import os
 from urllib.request import urlopen
 import re
-from os import walk
+import mechanicalsoup
+import requests
 
 # recupération de la liste des fichiers d'evenement 
 list_of_deck = [str(x[0]) for x in os.walk(r"C:\Users\Utilisateur\Documents\python\web_scrp_mtg\events")]
@@ -32,7 +34,29 @@ def deck_standings(deck_number):
     else :
         deck_standings = "33-64"
     return deck_standings
-    
+
+def get_card_url(card_name):
+    # version with mechanical soup
+    # scryfall_url = "https://scryfall.com/"
+    # browser = mechanicalsoup.Browser()
+    # page = browser.get(scryfall_url)
+    # search_page = page.soup
+
+    # form = search_page.select("form")[0]
+    # form.select("input")[0]["value"] = card_name
+
+    # return browser.submit(form, page.url).url
+
+    #___________________________________________________
+    #version with api call
+    response = requests.get(f"https://api.scryfall.com/cards/named?exact={card_name.replace(' ', '-')}")
+
+    if response:
+        return response.json()["scryfall_uri"]
+    else:
+        raise Exception(f"Non-success status code: {response.status_code}")
+
+
 # ouverutre d'un fichier d'evenement
 def get_deck_list(filenames, manual_traitement):
     for event_index in range(1, len(filenames)): 
@@ -40,15 +64,13 @@ def get_deck_list(filenames, manual_traitement):
             print(filenames[event_index][-1][:-5], " deja traité")
             continue
         try:
+            print(event_index)
             deck_lists = pd.read_json(fr"{list_of_deck[event_index]}\{filenames[event_index][-1]}", orient="index")
             player = deck_lists["Player"]
             deck = deck_lists["Deck"]
             url = deck_lists["URL"]
         except KeyError:
             print("Le json n'est pas au bon format")
-
-    # for index, row in deck_lists.iterrows():
-        # print(deck_lists['Deck'][ind], deck_lists['URL'][ind])
 
         for deck_number in range(0, len(deck_lists)):
             page = urlopen(deck_lists.loc[deck_number]['URL'])
@@ -68,17 +90,16 @@ def get_deck_list(filenames, manual_traitement):
                 if len(important_data) == 2:
                     copy.append(important_data[0][2:-2])
                     card_name.append(important_data[1][2:-1])
-            # print(copy, card_name)
 
-            deck_list = pd.DataFrame(columns=["number of copy", "card name", "main/side"])
+            deck_list = pd.DataFrame(columns=["number of copy", "card name", "main/side", "url"])
             main_deck_size = 0
 
             for i in range(0, len(copy)):
                 if main_deck_size != 60:
-                    deck_list.loc[i] = [copy[i], card_name[i], "Main Deck"]
+                    deck_list.loc[i] = [copy[i], card_name[i], "Main Deck", get_card_url(card_name[i])]
                     main_deck_size += int(copy[i])
                 else:
-                    deck_list.loc[i] = [copy[i], card_name[i], "Sideboard"]
+                    deck_list.loc[i] = [copy[i], card_name[i], "Sideboard", get_card_url(card_name[i])]
 
             deck_standing = deck_standings(deck_number)
 
